@@ -8,6 +8,10 @@ sys.path.append("tools/")
 from feature_format import featureFormat, targetFeatureSplit
 from tester import dump_classifier_and_data
 
+def save_predictor():
+    with open("my_classifier.pkl", "w") as file:
+        pickle.dump(data_file, file)
+
 ### Task 1: Select what features you'll use.
 ### features_list is a list of strings, each of which is a feature name.
 ### The first feature must be "poi".
@@ -26,6 +30,8 @@ with open("final_project_dataset.pkl", "r") as data_file:
 data_dict.pop("TOTAL", 0)
 
 ### Task 3: Create new feature(s)
+with open("my_dataset.pkl", "w") as file:
+    pickle.dump(data_file, file)
 ### Store to my_dataset for easy export below.
 my_dataset = data_dict
 
@@ -41,12 +47,21 @@ labels, features = targetFeatureSplit(data)
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 from sklearn.decomposition import PCA
+from sklearn.cross_validation import train_test_split
+features_train, features_test, labels_train, labels_test = \
+    train_test_split(features, labels, test_size=0.3, random_state=42)
 estimators = [('reduce_features', PCA()), ('clf', SVC())]
 pipe = Pipeline(estimators)
 #TODO Try multiple SVC, GAUSSIAN, NEURAL NETWORKS, LINEAR REGRESSION
 # Provided to give you a starting point. Try a variety of classifiers.
 from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import LinearRegression
 clf = GaussianNB()
+clf.fit(features_train, labels_train)
+
 
 ### Task 5: Tune your classifier to achieve better than .3 precision and recall 
 ### using our testing script. Check the tester.py script in the final project
