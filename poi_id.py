@@ -30,8 +30,7 @@ with open("final_project_dataset.pkl", "r") as data_file:
 data_dict.pop("TOTAL", 0)
 
 ### Task 3: Create new feature(s)
-with open("my_dataset.pkl", "w") as file:
-    pickle.dump(data_file, file)
+
 ### Store to my_dataset for easy export below.
 my_dataset = data_dict
 
