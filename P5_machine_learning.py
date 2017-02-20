@@ -1,9 +1,6 @@
 import sys
 import pickle
 
-from sklearn.decomposition import NMF
-from sklearn.feature_selection import SelectKBest, chi2
-
 sys.path.append("tools/")
 
 from feature_format import featureFormat, targetFeatureSplit
@@ -14,6 +11,7 @@ from sklearn.decomposition import PCA
 from sklearn.cross_validation import train_test_split
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.linear_model import LinearRegression
 
@@ -43,6 +41,13 @@ class Final_project:
         # between all the employees. However we have to take out the errors, like one with TOTAL being treated as another employee
         self.data_dict.pop("TOTAL", 0)
 
+    def save_estimator(self, filename, estimator):
+        with open(filename+".pkl", "w") as clf_outfile:
+            pickle.dump(estimator.best_estimator_, clf_outfile)
+        with open(filename+"_results.txt", "w") as results:
+            results.write("best score: " + estimator.best_score_)
+            results.write("best params: " + estimator.best_estimator_)
+
     def main(self):
         self.load_dataset()
         ### Task 2: Remove outliers
@@ -54,24 +59,66 @@ class Final_project:
         ### Task 4: Try a varity of classifiers
         features_train, features_test, labels_train, labels_test = \
             train_test_split(self.features, self.labels, test_size=0.3, random_state=42)
+
+        estimators = [('reduce_dim', PCA()), ('classify', DecisionTreeClassifier())]
+        pipe = Pipeline(estimators)
+        param_grid = [
+            {
+                'classify__max_features': "auto"
+            },
+
+        ]
+        clf = GridSearchCV(pipe, param_grid, n_jobs=3, verbose=10)
+        clf.fit(self.features, self.labels)
+        self.save_estimator("tree_estimator", clf)
+
         estimators = [('reduce_dim', PCA()), ('classify', SVC())]
         pipe = Pipeline(estimators)
         param_grid = [
             {
-                'reduce_dim': [PCA(iterated_power=7), NMF()],
-                'reduce_dim__k': [2, 4, 8],
-                'classify__C': [0.01, 1, 5, 10],
-                'classify__kernel': ['linear', 'rbf']
+                'classify__C': [0.01, 1],
+                'classify__kernel': ['linear']
+                #'classify__C': [0.01, 1, 5, 10],
+                #'classify__kernel': ['linear', 'rbf']
             },
-            {
-                'reduce_dim': [SelectKBest(chi2)],
-                'reduce_dim__k': [2, 4, 8],
-                'classify__C': [0.01, 1, 5, 10],
-                'classify__kernel': ['linear', 'rbf']
-            },
+
         ]
-        clf = GridSearchCV(pipe, param_grid, cv=3, n_jobs=4)
+        clf = GridSearchCV(pipe, param_grid, n_jobs=-1, verbose=10)
         clf.fit(self.features, self.labels)
+        self.save_estimator("vector_estimator", clf)
+
+        estimators = [('reduce_dim', PCA()), ('classify', GaussianNB())]
+        pipe = Pipeline(estimators)
+        param_grid = [{}, ]
+        clf = GridSearchCV(pipe, param_grid, n_jobs=3, verbose=10)
+        clf.fit(self.features, self.labels)
+        self.save_estimator("gaussian_estimator", clf)
+
+        estimators = [('reduce_dim', PCA()), ('classify', LinearRegression())]
+        pipe = Pipeline(estimators)
+        param_grid = [{}, ]
+        clf = GridSearchCV(pipe, param_grid, n_jobs=3, verbose=10)
+        clf.fit(self.features, self.labels)
+        self.save_estimator("linear_estimator", clf)
+
+        estimators = [('reduce_dim', PCA()), ('classify', MLPClassifier())]
+        pipe = Pipeline(estimators)
+        param_grid = [
+            {
+                'classify__hidden_layer_sizes': [10, 50, 100, 150, 200],
+                'activation': ['logistic', 'relu'],
+                'solver': ['sgd', 'adam'],
+                'alpha': [0.00001, 0.0001, 0.001, 0.01],
+                'max_iter': [150, 200, 250],
+                'verbose': True
+             },
+
+        ]
+        clf = GridSearchCV(pipe, param_grid, n_jobs=3, verbose=10)
+        clf.fit(self.features, self.labels)
+        self.save_estimator("neural_estimator", clf)
+
+
         print "aaa"
 
 
