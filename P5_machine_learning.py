@@ -1,6 +1,7 @@
 import sys
 import pickle
-
+import json
+import numpy as np
 sys.path.append("tools/")
 
 from feature_format import featureFormat, targetFeatureSplit
@@ -43,10 +44,20 @@ class Final_project:
 
     def save_estimator(self, filename, estimator):
         with open(filename+".pkl", "w") as clf_outfile:
-            pickle.dump(estimator.best_estimator_, clf_outfile)
-        with open(filename+"_results.txt", "w") as results:
-            results.write("best score: " + estimator.best_score_)
-            results.write("best params: " + estimator.best_estimator_)
+            pickle.dump(estimator.best_estimator_._final_estimator, clf_outfile)
+        with open(filename+"_best_result.txt", "w") as results:
+            results.write("best score: " + str(estimator.best_score_))
+        with open(filename+"_results.json", "w") as results:
+            delete = ""
+            aux = estimator.cv_results_
+            test = np.array([1])
+            testma = np.ma.array([1])
+            for elem in aux:
+                if type(aux[elem]) == type(test):
+                    aux[elem] = aux[elem].tolist()
+                if type(aux[elem]) == type(testma):
+                    aux[elem] = aux[elem].tolist()
+            json.dump(aux, results)
 
     def main(self):
         self.load_dataset()
@@ -64,28 +75,14 @@ class Final_project:
         pipe = Pipeline(estimators)
         param_grid = [
             {
-                'classify__max_features': "auto"
+                'classify__max_features': ["auto"]
             },
-
-        ]
-        clf = GridSearchCV(pipe, param_grid, n_jobs=3, verbose=10)
-        clf.fit(self.features, self.labels)
-        self.save_estimator("tree_estimator", clf)
-
-        estimators = [('reduce_dim', PCA()), ('classify', SVC())]
-        pipe = Pipeline(estimators)
-        param_grid = [
-            {
-                'classify__C': [0.01, 1],
-                'classify__kernel': ['linear']
-                #'classify__C': [0.01, 1, 5, 10],
-                #'classify__kernel': ['linear', 'rbf']
-            },
-
         ]
         clf = GridSearchCV(pipe, param_grid, n_jobs=-1, verbose=10)
         clf.fit(self.features, self.labels)
-        self.save_estimator("vector_estimator", clf)
+        self.save_estimator("tree_estimator", clf)
+
+
 
         estimators = [('reduce_dim', PCA()), ('classify', GaussianNB())]
         pipe = Pipeline(estimators)
@@ -106,11 +103,10 @@ class Final_project:
         param_grid = [
             {
                 'classify__hidden_layer_sizes': [10, 50, 100, 150, 200],
-                'activation': ['logistic', 'relu'],
-                'solver': ['sgd', 'adam'],
-                'alpha': [0.00001, 0.0001, 0.001, 0.01],
-                'max_iter': [150, 200, 250],
-                'verbose': True
+                'classify__activation': ['logistic', 'relu'],
+                'classify__solver': ['sgd', 'adam'],
+                'classify__alpha': [0.0001, 0.001, 0.01],
+                'classify__max_iter': [150, 200, 250]
              },
 
         ]
@@ -118,6 +114,20 @@ class Final_project:
         clf.fit(self.features, self.labels)
         self.save_estimator("neural_estimator", clf)
 
+        estimators = [('reduce_dim', PCA()), ('classify', SVC())]
+        pipe = Pipeline(estimators)
+        param_grid = [
+            {
+                'classify__C': [0.01, 1],
+                'classify__kernel': ['linear']
+                # 'classify__C': [0.01, 1, 5, 10],
+                # 'classify__kernel': ['linear', 'rbf']
+            },
+
+        ]
+        clf = GridSearchCV(pipe, param_grid, n_jobs=-1, verbose=10)
+        clf.fit(self.features, self.labels)
+        self.save_estimator("vector_estimator", clf)
 
         print "aaa"
 
