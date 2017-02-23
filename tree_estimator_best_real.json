@@ -1,0 +1,6 @@
+{"presort": false,
+  "min_impurity_split": 1e-08,
+  "results": [0.8285333333333333, 0.34388646288209607, 0.315],
+  "criterion": "gini",
+  "max_features": "log2",
+  "class_weight": "balanced"}

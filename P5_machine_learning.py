@@ -2,19 +2,19 @@ import sys
 import pickle
 import json
 import numpy as np
+
+
 sys.path.append("tools/")
 
 from feature_format import featureFormat, targetFeatureSplit
-from tester import dump_classifier_and_data
 from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
-from sklearn.cross_validation import train_test_split
-from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from tester import test_classifier
 
 class Final_project:
 
@@ -59,6 +59,41 @@ class Final_project:
                     aux[elem] = aux[elem].tolist()
             json.dump(aux, results)
 
+    def classifier(self, estimator, param_grid, estimator_file):
+        estimators = [('reduce_dim', PCA()), ('classify', estimator())]
+        pipe = Pipeline(estimators)
+        clf = GridSearchCV(pipe, param_grid, n_jobs=-1, verbose=10)
+        clf.fit(self.features, self.labels)
+        self.save_estimator(estimator_file, clf)
+
+    def trying_classifiers(self):
+        param_grid = {
+            'classify__max_features': ["auto", "sqrt", "log2", None]
+        }
+        self.classifier(DecisionTreeClassifier, param_grid, "tree_estimator")
+
+        param_grid = {}
+        self.classifier(GaussianNB, param_grid, "gaussian_estimator")
+
+        param_grid = {}
+        self.classifier(LinearRegression, param_grid, "linear_estimator")
+
+        param_grid = {
+            'classify__hidden_layer_sizes': [10, 50, 100, 150, 200],
+            'classify__activation': ['logistic', 'relu'],
+            'classify__solver': ['sgd', 'adam'],
+            'classify__alpha': [0.0001, 0.001, 0.01],
+            'classify__max_iter': [150, 200, 250]
+        }
+        self.classifier(MLPClassifier, param_grid, "neural_estimator")
+
+        param_grid = {
+            'classify__C': [0.01, 0.05, 0.1, 0.5, 1, 3],
+            'classify__max_iter': [75, 100, 125, 150, 200, 250],
+            'classify__solver': ["newton-cg", "lbfgs", "liblinear", "sag"]
+        }
+        self.classifier(LogisticRegression, param_grid, "logistic_estimator")
+
     def main(self):
         self.load_dataset()
         ### Task 2: Remove outliers
@@ -68,70 +103,52 @@ class Final_project:
         self.labels, self.features = targetFeatureSplit(data)
 
         ### Task 4: Try a varity of classifiers
-        features_train, features_test, labels_train, labels_test = \
-            train_test_split(self.features, self.labels, test_size=0.3, random_state=42)
-
-        estimators = [('reduce_dim', PCA()), ('classify', DecisionTreeClassifier())]
-        pipe = Pipeline(estimators)
-        param_grid = [
-            {
-                'classify__max_features': ["auto"]
-            },
-        ]
-        clf = GridSearchCV(pipe, param_grid, n_jobs=-1, verbose=10)
-        clf.fit(self.features, self.labels)
-        self.save_estimator("tree_estimator", clf)
+        #self.trying_classifiers()
+        self.tree()
 
 
+    def tree(self):
+        param_grid = {
+            'max_features': ["auto", "sqrt", "log2", None],
+            'criterion': ["gini", "entropy"],
+            'class_weight': ["balanced", None],
+            'min_impurity_split': [1e-8, 1e-7, 1e-6, 1e-5],
+            'presort': [True, False]
+        }
+        best_params = {
+            'max_features': "",
+            'criterion': "",
+            'class_weight': "",
+            'min_impurity_split': "",
+            'presort': "",
+            'results': [0,0,0]
+        }
+        for elem in param_grid['max_features']:
+            for criter in param_grid['criterion']:
+                for weight in param_grid['class_weight']:
+                    for impurity in param_grid['min_impurity_split']:
+                        for sort in param_grid['presort']:
 
-        estimators = [('reduce_dim', PCA()), ('classify', GaussianNB())]
-        pipe = Pipeline(estimators)
-        param_grid = [{}, ]
-        clf = GridSearchCV(pipe, param_grid, n_jobs=3, verbose=10)
-        clf.fit(self.features, self.labels)
-        self.save_estimator("gaussian_estimator", clf)
+                            clf = DecisionTreeClassifier(max_features=elem, criterion=criter,
+                                                         class_weight=weight, min_impurity_split=impurity,
+                                                         presort=sort)
+                            clf.fit(self.features, self.labels)
+                            acu, prec, rec = test_classifier(clf, self.data_dict, self.features_list)
+                            if acu >=best_params['results'][0]:
+                                if prec >= best_params['results'][1]:
+                                    if rec >= best_params['results'][2]:
+                                        best_params['results'] = [acu, prec, rec]
+                                        best_params['max_features'] = elem
+                                        best_params['criterion'] = criter
+                                        best_params['class_weight'] = weight
+                                        best_params['min_impurity_split'] = impurity
+                                        best_params['presort'] = sort
+        print best_params
 
-        estimators = [('reduce_dim', PCA()), ('classify', LinearRegression())]
-        pipe = Pipeline(estimators)
-        param_grid = [{}, ]
-        clf = GridSearchCV(pipe, param_grid, n_jobs=3, verbose=10)
-        clf.fit(self.features, self.labels)
-        self.save_estimator("linear_estimator", clf)
 
-        estimators = [('reduce_dim', PCA()), ('classify', MLPClassifier())]
-        pipe = Pipeline(estimators)
-        param_grid = [
-            {
-                'classify__hidden_layer_sizes': [10, 50, 100, 150, 200],
-                'classify__activation': ['logistic', 'relu'],
-                'classify__solver': ['sgd', 'adam'],
-                'classify__alpha': [0.0001, 0.001, 0.01],
-                'classify__max_iter': [150, 200, 250]
-             },
-
-        ]
-        clf = GridSearchCV(pipe, param_grid, n_jobs=3, verbose=10)
-        clf.fit(self.features, self.labels)
-        self.save_estimator("neural_estimator", clf)
-
-        estimators = [('reduce_dim', PCA()), ('classify', SVC())]
-        pipe = Pipeline(estimators)
-        param_grid = [
-            {
-                'classify__C': [0.01, 1],
-                'classify__kernel': ['linear']
-                # 'classify__C': [0.01, 1, 5, 10],
-                # 'classify__kernel': ['linear', 'rbf']
-            },
-
-        ]
-        clf = GridSearchCV(pipe, param_grid, n_jobs=-1, verbose=10)
-        clf.fit(self.features, self.labels)
-        self.save_estimator("vector_estimator", clf)
-
-        print "aaa"
 
 
 if __name__ == '__main__':
     final_project = Final_project()
     final_project.main()
+

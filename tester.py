@@ -10,10 +10,10 @@
     that process should happen at the end of poi_id.py
 """
 
-import pickle
+import cPickle as pickle
 import sys
 from sklearn.cross_validation import StratifiedShuffleSplit
-sys.path.append("../tools/")
+sys.path.append("tools/")
 from feature_format import featureFormat, targetFeatureSplit
 
 PERF_FORMAT_STRING = "\
@@ -70,13 +70,16 @@ def test_classifier(clf, dataset, feature_list, folds = 1000):
         print PERF_FORMAT_STRING.format(accuracy, precision, recall, f1, f2, display_precision = 5)
         print RESULTS_FORMAT_STRING.format(total_predictions, true_positives, false_positives, false_negatives, true_negatives)
         print ""
+        return accuracy, precision, recall
     except:
         print "Got a divide by zero when trying out:", clf
         print "Precision or recall may be undefined due to a lack of true positive predicitons."
 
-CLF_PICKLE_FILENAME = "my_classifier.pkl"
-DATASET_PICKLE_FILENAME = "my_dataset.pkl"
-FEATURE_LIST_FILENAME = "my_feature_list.pkl"
+
+
+CLF_PICKLE_FILENAME = "tree_estimator.pkl"
+DATASET_PICKLE_FILENAME = "final_project_dataset.pkl"
+FEATURE_LIST_FILENAME = "feature_list.pkl"
 
 def dump_classifier_and_data(clf, dataset, feature_list):
     with open(CLF_PICKLE_FILENAME, "w") as clf_outfile:
@@ -103,3 +106,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+    # features_list = ['poi', 'salary', 'total_payments', 'bonus', 'total_stock_value', 'expenses',
+    #                  'to_messages', 'from_poi_to_this_person', 'from_messages',
+    #                  'from_this_person_to_poi', 'shared_receipt_with_poi']
+    # with open(FEATURE_LIST_FILENAME, "w") as featurelist_outfile:
+    #     pickle.dump(features_list, featurelist_outfile)
