@@ -1,1 +1,1 @@
-{"presort": false, "criterion": "gini", "max_features": "sqrt", "min_impurity_split": 1e-06, "results": [0.8250666666666666, 0.33189655172413796, 0.308], "feature_importances": 
+{"presort": true, "criterion": "gini", "max_features": "auto", "min_impurity_split": 1e-07, "results": [0.8224, 0.3169790518191841, 0.2875], "feature_importances": [0.0, 0.028768699654775496, 0.0020833333333333346, 0.042361111111111245, 0.36127945165089814, 0.0, 0.045045045045045085, 0.0, 0.059615666220563475, 0.11952932771481159, 0.34131736526946166], "class_weight": "balanced"}

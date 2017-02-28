@@ -14,24 +14,25 @@ def autolabel( rects, ax):
                 ha='center')
 # the x locations for the groups
 width = 0.35
-file_names = ["gaussian_estimator", "neural_estimator", "tree_estimator", "logistic_estimator"]
+file_names = ['salary', 'total\npayments', 'bonus', 'total\nstock_value', 'expenses',
+                              'to_messages', 'from_poi_to\nthis_person', 'from\nmessages',
+                              'from_this\nperson_to_poi', 'shared_receipt\nwith_poi', 'total_income']
 ind = np.arange(len(file_names))
-best_scores = []
-for name in file_names:
-    with open(name + "_best_result.txt", "r") as results:
-        aux = results.readline()
-        aux = aux.split(": ")[1]
-        aux = float(aux.strip())
-        best_scores.append(aux)
+best_scores = [0.0, 0.028768699654775496, 0.0020833333333333346, 0.042361111111111245, 0.36127945165089814, 0.0,
+               0.045045045045045085, 0.0, 0.059615666220563475, 0.11952932771481159, 0.34131736526946166]
+# for name in file_names:
+#     with open(name + "_best_result.txt", "r") as results:
+#         aux = results.readline()
+#         aux = aux.split(": ")[1]
+#         aux = float(aux.strip())
+#         best_scores.append(aux)
 
 fig, ax = plt.subplots()
-rect = ax.bar(ind, best_scores, width, color='g')
-ax.set_xticks(ind + width / 2)
-ax.set_xticklabels(file_names)
-autolabel(rect, ax)
-plt.ylim([0, 1])
+rect = ax.barh(ind, best_scores, width, color='g')
+ax.set_yticks(ind + width / 2)
+ax.set_yticklabels(file_names)
 ax.set_ylabel('Scores')
-ax.set_title('Algorithms calculated')
+ax.set_title('Feature Importances')
 
 plt.show()
 

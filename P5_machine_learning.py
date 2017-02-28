@@ -46,15 +46,16 @@ class FinalProject:
             self.data_dict = pickle.load(data_file)
 
     def add_feature(self):
-        # Here we add a new feature wich consists in the sum aof all the income of the employee no matter if it was salary related of stock ones
+        # Here we add a new feature wich consists in the sum of all the income of the employee no matter if it was salary related of stock ones
         for elem in self.data_dict:
             payments = self.data_dict[elem]['total_payments']
             stock = self.data_dict[elem]["total_stock_value"]
-            if type(self.data_dict[elem]['total_payments']) == type("test"):
+            if isinstance(self.data_dict[elem]['total_payments'], str):
                 payments = 0
-            if type(self.data_dict[elem]["total_stock_value"]) == type("test"):
+            if isinstance(self.data_dict[elem]["total_stock_value"], str):
                 stock = 0
             self.data_dict[elem]["total_income"] = payments + stock
+        self.features_list.append("total_income")
 
     def outliers(self):
         # For the outliers we have to understand that the outliers give us important information about the differences
@@ -152,7 +153,7 @@ class FinalProject:
         params = self.tree()
 
         # Task 6 Dump your data
-        dump_classifier_and_data(params["clf"], self.data_dict, self.features)
+        dump_classifier_and_data(params["clf"], self.data_dict, self.features_list)
         params.pop("clf")
         with open("best_results.json", "w") as results:
             json.dump(params, results)
@@ -203,7 +204,7 @@ class FinalProject:
                                         best_params['class_weight'] = weight
                                         best_params['min_impurity_split'] = impurity
                                         best_params['presort'] = sort
-                                        best_params['feature_importances'] = clf.feature_importances_
+                                        best_params['feature_importances'] = clf.feature_importances_.tolist()
                                         best_params['clf'] = clf
         return best_params
 
