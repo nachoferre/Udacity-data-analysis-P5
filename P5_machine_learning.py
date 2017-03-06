@@ -107,7 +107,7 @@ class FinalProject:
         pipe = Pipeline(estimators)
         # Third we create the grid ssearch that will create multiple estimator to cover every combination of
         #  variables given the ones passed through the para_grid parameter
-        clf = GridSearchCV(pipe, param_grid, n_jobs=-1, verbose=10)
+        clf = GridSearchCV(pipe, param_grid, n_jobs=-1, verbose=10, scoring='recall')
         # Fourth we train it
         clf.fit(self.features, self.labels)
         # Finally we save our results
@@ -159,7 +159,7 @@ class FinalProject:
         self.labels, self.features = targetFeatureSplit(data)
 
         ### Task 4: Try a varity of classifiers
-        # self.trying_classifiers()
+        self.trying_classifiers()
         # Task 5: Tune your classifier
         params = self.tree()
 
