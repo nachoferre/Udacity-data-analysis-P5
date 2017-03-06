@@ -28,9 +28,12 @@ class FinalProject:
         # Task 1: Select what features you'll use.
         # features_list is a list of strings, each of which is a feature name.
         # The first feature must be "poi".
-        self.features_list = ['poi', 'salary', 'total_payments', 'bonus', 'total_stock_value', 'expenses',
-                              'to_messages', 'from_poi_to_this_person', 'from_messages',
-                              'from_this_person_to_poi', 'shared_receipt_with_poi']
+        self.features_list_start = ['poi','to_messages', 'deferral_payments', 'expenses', 'long_term_incentive',
+                              'from_poi_to_this_person', 'deferred_income', 'restricted_stock_deferred',
+                              'shared_receipt_with_poi', 'loan_advances', 'from_messages', 'other', 'director_fees',
+                              'bonus', 'total_stock_value', 'from_this_person_to_poi', 'restricted_stock', 'salary',
+                              'total_payments', 'exercised_stock_options']
+
         # We have chosen a big deal of features so we can work with the pca,
         # and let it decide the best ones to work with
 
@@ -44,6 +47,13 @@ class FinalProject:
         # Here we load the current dataset that we are going to work with
         with open(self.data_file, "r") as data_file:
             self.data_dict = pickle.load(data_file)
+
+    def load_features(self):
+        try:
+            with open("feature_list.pkl", "r") as data_file:
+                self.features_list = pickle.load(data_file)
+        except Exception as e:
+            self.features_list = self.features_list_start
 
     def add_feature(self):
         # Here we add a new feature wich consists in the sum of all the income of the employee no matter if it was salary related of stock ones
@@ -140,6 +150,7 @@ class FinalProject:
         # so the visibility is clean
 
         self.load_dataset()
+        self.load_features()
         ### Task 2: Remove outliers
         self.outliers()
 
@@ -153,10 +164,17 @@ class FinalProject:
         params = self.tree()
 
         # Task 6 Dump your data
+        aux = self.features_list
+        for i in reversed(range(len(params['feature_importances']))):
+            if params['feature_importances'][i] <= 0.0:
+                self.features_list.remove(aux[i+1])
         dump_classifier_and_data(params["clf"], self.data_dict, self.features_list)
         params.pop("clf")
         with open("best_results.json", "w") as results:
             json.dump(params, results)
+
+        # Test the impact of our added feature
+        self.test_feature(params)
 
     def tree(self):
         # This is the function in charge of studying thoroughly the decision tree classifier and test it against
@@ -179,7 +197,7 @@ class FinalProject:
             'presort': "",
             'clf': "",
             'feature_importances': [],
-            'results': [0, 0, 0]
+            'results': [0.0, 0.0, 0.0]
         }
         # Here we iterate for every possible arrangements of parameters for the estimator
         for elem in param_grid['max_features']:
@@ -195,9 +213,9 @@ class FinalProject:
                             acu, prec, rec = test_classifier(clf, self.data_dict, self.features_list)
                             # Here we check that the trained estimator is better than the last, and if it is
                             # we will save its params as well as the estimator itself
-                            if acu >= best_params['results'][0]:
-                                if prec >= best_params['results'][1]:
-                                    if rec >= best_params['results'][2]:
+                            if acu >= best_params['results'][0] or any(i <= 0.3 for i in best_params['results']):
+                                if rec >= best_params['results'][2] or any(i <= 0.3 for i in best_params['results']):
+                                    if prec >= best_params['results'][1] or any(i <= 0.3 for i in best_params['results']):
                                         best_params['results'] = [acu, prec, rec]
                                         best_params['max_features'] = elem
                                         best_params['criterion'] = criter
@@ -207,6 +225,19 @@ class FinalProject:
                                         best_params['feature_importances'] = clf.feature_importances_.tolist()
                                         best_params['clf'] = clf
         return best_params
+
+    def test_feature(self, param):
+        #First we roll back to our original dataset
+        self.load_dataset()
+        clf = DecisionTreeClassifier(max_features=param['max_features'], criterion=param['criterion'],
+                                     class_weight=param['class_weight'], min_impurity_split=param['min_impurity_split'],
+                                     presort=param['presort'])
+        clf.fit(self.features, self.labels)
+        acu, prec, rec = test_classifier(clf, self.data_dict, self.features_list)
+        print "Results of the original dataset: " + "Accuracy: " + str(acu) + "   Precision: " + str(prec) + \
+              "   Recall: " + str(rec)
+        print "Results of the edited dataset (new feature included): " + "Accuracy: " + str(param['results'][0]) \
+              + "   Precision: " + str(param['results'][1]) + "   Recall: " + str(param['results'][2])
 
 
 if __name__ == '__main__':
