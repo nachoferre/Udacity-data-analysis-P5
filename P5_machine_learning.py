@@ -159,7 +159,7 @@ class FinalProject:
         self.labels, self.features = targetFeatureSplit(data)
 
         ### Task 4: Try a varity of classifiers
-        self.trying_classifiers()
+        #self.trying_classifiers()
         # Task 5: Tune your classifier
         params = self.tree()
 
